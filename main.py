@@ -1,9 +1,7 @@
 import os
 import sys
 import google.generativeai as genai
-import replicate
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import requests
 
 # ----------------------------
@@ -23,19 +21,28 @@ response = model.generate_content(f"Write a 700-word engaging blog post about {T
 content = response.text.strip()
 
 # ----------------------------
-# 2. Replicate: Generate Image
+# 2. Google Custom Search API: Search for Images
 # ----------------------------
-# Pass REPLICATE_KEY to the environment
-os.environ["REPLICATE_API_TOKEN"] = os.getenv("REPLICATE_KEY")
 
-# Call Replicate API to generate image
-image_url = replicate.run(
-    "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-    input={
-        "prompt": f"High-quality illustration of: {TOPIC}",
-        "negative_prompt": "text, watermark"
-    }
-)[0]
+API_KEY = os.getenv("GOOGLE_API_KEY")  # Add your Google API key here
+CSE_ID = os.getenv("GOOGLE_CSE_ID")    # Add your Custom Search Engine ID here
+
+# Function to search for images related to the topic
+def search_images(query):
+    url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={CSE_ID}&searchType=image&key={API_KEY}"
+    response = requests.get(url)
+    results = response.json()
+    image_urls = []
+    if "items" in results:
+        for item in results["items"]:
+            image_urls.append(item["link"])  # URL of each image found
+    return image_urls
+
+# Search for images related to the topic
+image_urls = search_images(TOPIC)
+
+# Get the first image URL (you can add logic to select one)
+image_url = image_urls[0] if image_urls else ""
 
 # ----------------------------
 # 3. Blogger: Publish Post
