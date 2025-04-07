@@ -31,10 +31,18 @@ search_url = f"https://www.googleapis.com/customsearch/v1?q={TOPIC}&key={GOOGLE_
 
 # Make the request to Google Custom Search API
 search_response = requests.get(search_url)
+
+# Check if the response contains the expected data
 search_results = search_response.json()
 
-# Get the URL of the first image result
-image_url = search_results["items"][0]["link"]
+# Debugging: Print the raw API response to check what we got
+print(search_results)
+
+# Check if 'items' key exists and there are items in the response
+if 'items' in search_results and len(search_results['items']) > 0:
+    image_url = search_results['items'][0]["link"]
+else:
+    image_url = "https://via.placeholder.com/150"  # Fallback image if no results are found
 
 # ----------------------------
 # 3. Blogger: Publish Post
