@@ -1,0 +1,32 @@
+name: AI Blog Automation
+
+on:
+  repository_dispatch:
+    types: [new_post]
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install google-generativeai replicate gspread requests oauth2client
+
+      - name: Run automation script
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          REPLICATE_KEY: ${{ secrets.REPLICATE_KEY }}
+          BLOGGER_TOKEN: ${{ secrets.BLOGGER_TOKEN }}
+          BLOG_ID: ${{ secrets.BLOG_ID }}
+          SHEET_URL: ${{ secrets.SHEET_URL }}
+        run: |
+          python main.py "${{ github.event.client_payload.topic }}" "${{ github.event.client_payload.row }}"
