@@ -2,6 +2,7 @@ import os
 import sys
 import google.generativeai as genai
 import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import requests
 
 # ----------------------------
@@ -21,28 +22,19 @@ response = model.generate_content(f"Write a 700-word engaging blog post about {T
 content = response.text.strip()
 
 # ----------------------------
-# 2. Google Custom Search API: Search for Images
+# 2. Google Custom Search: Search for Image
 # ----------------------------
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
 
-API_KEY = os.getenv("GOOGLE_API_KEY")  # Add your Google API key here
-CSE_ID = os.getenv("GOOGLE_CSE_ID")    # Add your Custom Search Engine ID here
+search_url = f"https://www.googleapis.com/customsearch/v1?q={TOPIC}&key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&searchType=image"
 
-# Function to search for images related to the topic
-def search_images(query):
-    url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={CSE_ID}&searchType=image&key={API_KEY}"
-    response = requests.get(url)
-    results = response.json()
-    image_urls = []
-    if "items" in results:
-        for item in results["items"]:
-            image_urls.append(item["link"])  # URL of each image found
-    return image_urls
+# Make the request to Google Custom Search API
+search_response = requests.get(search_url)
+search_results = search_response.json()
 
-# Search for images related to the topic
-image_urls = search_images(TOPIC)
-
-# Get the first image URL (you can add logic to select one)
-image_url = image_urls[0] if image_urls else ""
+# Get the URL of the first image result
+image_url = search_results["items"][0]["link"]
 
 # ----------------------------
 # 3. Blogger: Publish Post
