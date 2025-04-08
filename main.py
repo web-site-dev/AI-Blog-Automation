@@ -12,14 +12,21 @@ from google.oauth2.service_account import Credentials
 TOPIC = sys.argv[1]
 ROW = int(sys.argv[2])
 
+print("🚀 Starting automation for topic:", TOPIC, "Row:", ROW)
+
 # ----------------------------
 # 1. Gemini: Generate Blog Content
 # ----------------------------
 genai.configure(api_key=os.getenv("GEMINI_KEY"))
 model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
 
-response = model.generate_content(f"Write a 700-word engaging blog post about {TOPIC}")
-content = response.text.strip()
+try:
+    response = model.generate_content(f"Write a 700-word engaging blog post about {TOPIC}")
+    content = response.text.strip()
+    print("✅ Gemini content generated (length):", len(content))
+except Exception as e:
+    print("❌ Error generating content with Gemini:", str(e))
+    content = f"(Error generating content for topic: {TOPIC})"
 
 # ----------------------------
 # 2. Unsplash: Get Image Related to Topic
@@ -36,10 +43,11 @@ try:
     data = res.json()
     if "results" in data and len(data["results"]) > 0:
         image_url = data["results"][0]["urls"]["regular"]
+        print("🖼️ Unsplash image found:", image_url)
     else:
-        print("No image found from Unsplash.")
+        print("⚠️ No image found from Unsplash.")
 except Exception as e:
-    print("Error getting image from Unsplash:", str(e))
+    print("❌ Error getting image from Unsplash:", str(e))
 
 # ----------------------------
 # 3. Blogger: Publish Post
@@ -62,10 +70,13 @@ try:
         },
         json=blog_data
     )
-    print("Blogger status:", blog_response.status_code)
-    print("Blogger response:", blog_response.text)
-    blog_response.raise_for_status()
+    print("📤 Blogger response:", blog_response.status_code)
+    print("📨 Blogger message:", blog_response.text)
+
+    blog_response.raise_for_status()  # Will raise if not 2XX
     published_url = blog_response.json().get("url", "")
+    print("✅ Blog published at:", published_url)
+
 except Exception as e:
     print("❌ Error publishing to Blogger!")
     print("Exception:", str(e))
@@ -78,9 +89,12 @@ try:
     gc = gspread.authorize(creds)
     sheet = gc.open_by_url(os.getenv("SHEET_URL")).worksheet("AI Blog Scheduler")
 
-    sheet.update(f'B{ROW}', "PUBLISHED")
+    sheet.update(f'B{ROW}', "PUBLISHED" if published_url else "FAILED")
     sheet.update(f'C{ROW}', content)
     sheet.update(f'D{ROW}', image_url)
-    sheet.update(f'E{ROW}', published_url)
+    sheet.update(f'E{ROW}', published_url or "N/A")
+
+    print("✅ Sheet updated successfully.")
+
 except Exception as e:
-    print("Error updating Google Sheet:", str(e))
+    print("❌ Error updating Google Sheet:", str(e))
