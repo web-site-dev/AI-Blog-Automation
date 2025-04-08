@@ -49,14 +49,7 @@ except Exception as e:
 # ----------------------------
 # 3. Blogger: Publish Post
 # ----------------------------
-blog_url = f"https://www.googleapis.com/blogger/v3/blogs/{os.getenv('BLOG_ID')}/posts"
-
-blog_data = {
-    "title": TOPIC,
-    "content": f"<p>{content}</p><br><img src='{image_url}'>",
-    "labels": ["AI Generated", TOPIC.split()[0]],
-}
-
+# 3. Blogger: Publish Post
 published_url = ""
 
 try:
@@ -68,10 +61,16 @@ try:
         },
         json=blog_data
     )
-    blog_response.raise_for_status()  # Raise if Blogger returns an error
+    print("Blogger status:", blog_response.status_code)
+    print("Blogger response:", blog_response.text)
+    blog_response.raise_for_status()
     published_url = blog_response.json().get("url", "")
 except Exception as e:
-    print(f"Error publishing blog: {e}")
+    print("❌ Error publishing to Blogger!")
+    print("Status:", blog_response.status_code)
+    print("Response text:", blog_response.text)
+    print("Exception:", str(e))
+
 
 # ----------------------------
 # 4. Update Google Sheet
