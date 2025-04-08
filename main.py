@@ -22,7 +22,7 @@ response = model.generate_content(f"Write a 700-word engaging blog post about {T
 content = response.text.strip()
 
 # ----------------------------
-# 2. Unsplash: Search for Image
+# 2. Unsplash: Get Image Related to Topic
 # ----------------------------
 UNSPLASH_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
 image_url = "https://via.placeholder.com/300x200?text=No+Image"
@@ -37,9 +37,9 @@ try:
     if "results" in data and len(data["results"]) > 0:
         image_url = data["results"][0]["urls"]["regular"]
     else:
-        print("Unsplash returned no results.")
+        print("No image found from Unsplash.")
 except Exception as e:
-    print(f"Image search failed: {e}")
+    print("Error getting image from Unsplash:", str(e))
 
 # ----------------------------
 # 3. Blogger: Publish Post
@@ -49,7 +49,7 @@ blog_url = f"https://www.googleapis.com/blogger/v3/blogs/{os.getenv('BLOG_ID')}/
 
 blog_data = {
     "title": TOPIC,
-    "content": f"<p>{content}</p><br><img src='{image_url}'>",
+    "content": f"<p>{content}</p><br><img src='{image_url}'/>",
     "labels": ["AI Generated", TOPIC.split()[0]],
 }
 
@@ -82,6 +82,5 @@ try:
     sheet.update(f'C{ROW}', content)
     sheet.update(f'D{ROW}', image_url)
     sheet.update(f'E{ROW}', published_url)
-
 except Exception as e:
-    print(f"Error updating sheet: {e}")
+    print("Error updating Google Sheet:", str(e))
